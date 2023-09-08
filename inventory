@@ -1,3 +1,6 @@
+[Ansible_Controller]
+192.168.1.40
+
 [web_sunuculari]
 192.168.1.41
 192.168.1.42

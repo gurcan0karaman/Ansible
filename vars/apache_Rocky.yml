@@ -3,3 +3,5 @@
   php_kutuphane: php
   db_sunucusu: mariadb-server
   ftp_sunucusu: vsftpd
+  kaynak: /Git
+  hedef: /var/www/html/index.html

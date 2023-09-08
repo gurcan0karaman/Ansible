@@ -1,0 +1,22 @@
+---
+  - hosts: Ansible_Controller
+    connection: local
+    vars:
+      - repo: 'https://github.com/techakademi/Yenisite.git'
+      - dst: /Git
+    become: true
+    tasks:
+
+      - name: Bu gorev, git repodan proje kaynak kodlarini indidir.
+        git:
+          repo: "{{ repo }}"
+          dest: "{{ dst }}"
+      
+      - name: Bu gorev, Git repo'dan indirilen proje belgelerini listeler.
+        find:
+          paths: "{{ dst }}"
+        register: liste
+
+      - debug:
+          var: liste
+
