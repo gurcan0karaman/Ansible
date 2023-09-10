@@ -1,0 +1,135 @@
+---
+  - hosts: all
+    #tags: always
+    become: true #sudo ol anlamına gelir.
+    tasks:
+#Bu görev sunucu güncellemeleri içindir.
+
+    - name: Os upgrade Ubuntu
+      ansible.builtin.package:
+          upgrade: dist # üzerinde değişiklik olan depens'lerin güncellenmesini sağlar.
+          update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Os upgrade Rocky
+      ansible.builtin.package:
+          update_only: yes
+          update_cache: yes
+      when: ansible_distribution == "Rocky" 
+
+#Bu görev sadece web sunucularını için yükleme adımlarını kapsar.
+  - hosts: web_sunuculari
+    become: true
+    tasks:
+
+      - name: İşletim sistemlerini tespit et.
+        debug: var=ansible_os_family
+        tags: web_sunuculari
+
+      - name: Dosyalardan Değişkenleri oku.
+        include_vars: "{{ lookup('first_found', params) }}"
+        vars:
+          params:
+            files:
+              - "vars/apache_{{ ansible_os_family }}.yml"
+        tags: web_sunuculari
+      
+      - name: Bu görev app yükleme gerçekleştir.
+        ansible.builtin.package:
+            name:
+              - "{{ apache_sunucusu }}"
+              - "{{ php_kutuphane }}"
+            state: latest
+        tags: web_sunuculari
+      
+      - name: Bu gorev, Rocky linux'un Http portunu acar.
+        firewalld:
+          port: 80/tcp
+          permanent: yes
+          state: enabled
+        when: ansible_distribution == "Rocky"
+        register: rockyfw
+        tags: web_sunuculari
+      
+      - name: Bu gorev, Rocky linux'un fw servisini restart eder.
+        systemd:
+          name: firewalld
+          state: reloaded
+        when: ansible_distribution == "Rocky" and rockyfw.changed #rockyfw değişkeninde değşiklik var ise işleme alacak.
+        tags: web_sunuculari
+      
+      - name: Bu gorev web sunuculari config dosyalarini kopyalar.
+        copy:
+          src: "{{ kaynak2 }}"
+          dest: "{{ hedef2 }}"
+          owner: root
+          group: root
+          mode: 0777
+        register: conf
+        tags: web_sunuculari
+
+      - name: Bu gorev web sayfasi icerigini kopyalamak icin olusturulmustur.
+        copy:
+          src: "{{ kaynak }}"
+          dest: "{{ hedef }}"
+          owner: root
+          group: root
+          mode: 0777
+        tags: web_sunuculari
+      
+      - name: Bu gorev apache servisini restart eder.
+        service:
+          name: "{{ servis }}"
+          state: restarted
+          enabled: yes
+        when: conf.changed
+        tags: web_sunuculari
+
+
+#Bu görev sadece veri tabanı sunucularını için yükleme adımlarını kapsar.
+  - hosts: veritabani_sunucusu
+    become: true
+    tasks:
+
+      - name: İşletim sistemlerini tespit et.
+        debug: var=ansible_os_family
+        tags: veritabani_sunucusu
+
+      - name: Dosyalardan Değişkenleri oku.
+        include_vars: "{{ lookup('first_found', params) }}"
+        vars:
+          params:
+            files:
+              - "vars/apache_{{ ansible_os_family }}.yml"
+        tags: veritabani_sunucusu
+      
+      - name: Bu görev app yükleme gerçekleştir.
+        ansible.builtin.package:
+            name:
+              - "{{ db_sunucusu }}"
+            state: latest
+        tags: veritabani_sunucusu
+
+#Bu görev sadece ftp sunucularını için yükleme adımlarını kapsar.
+  - hosts: ftp_sunucusu
+    become: true
+    tasks:
+
+      - name: İşletim sistemlerini tespit et.
+        debug: var=ansible_os_family
+        tags: ftp_sunucusu
+
+      - name: Dosyalardan Değişkenleri oku.
+        include_vars: "{{ lookup('first_found', params) }}"
+        vars:
+          params:
+            files:
+              - "vars/apache_{{ ansible_os_family }}.yml"
+        tags: ftp_sunucusu
+      
+      - name: Bu görev app yükleme gerçekleştir.
+        ansible.builtin.package:
+            name:
+              - "{{ ftp_sunucusu }}"
+            state: latest
+        tags: ftp_sunucusu

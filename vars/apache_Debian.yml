@@ -5,3 +5,6 @@
   ftp_sunucusu: vsftpd
   kaynak: /Git/
   hedef: /var/www/html/
+  kaynak2: /playbooks/Ansible/confbelgeler/dir.conf
+  hedef2: /etc/apache2/mods-enabled/dir.conf
+  servis: apache2
