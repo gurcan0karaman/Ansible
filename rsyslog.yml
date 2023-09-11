@@ -1,0 +1,39 @@
+---
+  - hosts: all
+    become: true
+    tasks:
+
+      #- name: İşletim sistemlerini tespit et.
+      #  debug: var=ansible_os_family
+      
+      - name: Bu görev Rsyslog yükleme işlemini gerçekleştir.
+        ansible.builtin.package:
+            name:
+              - "rsyslog"
+            state: latest
+        #when: ansible_distribution == "Ubuntu"
+      
+      - name: Bu görev Rsyslog conf dosyasini yedekler.
+        copy:
+          src: /etc/rsyslog.conf
+          dest: /etc/rsyslog.conf_yedek
+          remote_src: yes
+          owner: root
+          group: root
+          mode: 0644
+
+      - name: Bu görev Rsyslog conf dosyasini kaynaktan remote sunucuya kopyalar.
+        copy:
+          src: /playbooks/Ansible/confbelgeler/rsyslog.conf
+          dest: /etc/rsyslog.conf
+          owner: root
+          group: root
+          mode: 0644
+        register: conf
+      
+      - name: Bu gorev Rsyslog servisini restart eder.
+        service:
+          name: "rsyslog"
+          state: restarted
+          enabled: yes
+        when: conf.changed

@@ -1,0 +1,47 @@
+---
+  - hosts: all
+    become: true
+    tasks:
+
+      - name: Check if resolv.conf file exists
+        stat:
+          path: /etc/resolv.conf
+        register: file_info
+      
+      - name: Bu görev resolv conf dosyasini yedekler.
+        copy:
+          src: /etc/resolv.conf
+          dest: /etc/resolv.conf_yedek
+          remote_src: yes
+          owner: root
+          group: root
+          mode: 0644
+        when: file_info.stat.exists
+      
+      - name: Create /etc/resolv.conf if it exists
+        file:
+          path: /etc/resolv.conf
+          state: touch
+        when: not file_info.stat.exists
+
+      - name: Remove nameserver *
+        replace:
+          path: /etc/resolv.conf
+          regexp:  "^(nameserver ).*"
+          replace: ""
+        when: file_info.stat.exists
+
+      - name: Remove search .
+        replace:
+          path: /etc/resolv.conf
+          regexp:  "^(search .).*"
+          replace: ""
+        when: file_info.stat.exists
+
+      - name: Set DNS nameservers in /etc/resolv.conf
+        blockinfile:
+          path: /etc/resolv.conf
+          block: |
+            search logo.com.tr
+            nameserver 10.122.101.55
+            nameserver 10.122.101.56

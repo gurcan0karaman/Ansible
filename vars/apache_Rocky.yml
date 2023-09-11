@@ -8,3 +8,6 @@
   kaynak2: /playbooks/Ansible/confbelgeler/httpd.conf
   hedef2: /etc/httpd/conf/httpd.conf
   servis: httpd
+  ntp: chrony
+  ntpconf: /etc/chrony.conf
+  ntpservis: chronyd

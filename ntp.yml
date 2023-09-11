@@ -1,0 +1,37 @@
+---
+  - hosts: all
+    become: true
+    tasks:
+
+      - name: Timezone yapilandirma Turkey
+        timezone:
+          name: Turkey
+      
+      #- name: timedatectl servis kapatilmesi
+      #  ansible.builtin.shell:
+      #    cmd: "timedatectl set-ntp off"
+      #    chdir: /
+      
+      - name: Bu görev ntpdate ve ntp yükleme işlemini gerçekleştir.
+        ansible.builtin.package:
+            name:
+              - "ntpdate"
+              - "ntp"
+            state: latest
+        register: conf
+        when: ansible_distribution == "Ubuntu"
+      
+      - name: ntp konfigurasyonu.
+        shell: |
+          timedatectl set-ntp off
+          ntpdate dc01.logo.com.tr
+          bash -c 'echo server dc01.logo.com.tr prefer iburst >> /etc/ntp.conf'
+        register: ntpconf
+        when: ansible_distribution == "Ubuntu" and conf.changed
+      
+      - name: Bu gorev ntp servisini restart eder.
+        service:
+          name: "ntp"
+          state: restarted
+          enabled: yes
+        when: ansible_distribution == "Ubuntu" and ntpconf.changed

@@ -1,0 +1,22 @@
+---
+  - hosts: all
+    become: true #sudo ol anlamına gelir.
+    tasks:
+ 
+    - name: Bu gurev, Yetkili user olusturmasini saglar.
+      user:
+        name: ansuser
+        groups: root
+    
+    - name: Bu gurev, ansible kullanicisi icin ssh anahtar atama gorevidir.
+      authorized_key:
+        user: ansuser
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHe8qbNdWmrVnZv7sKLSyNX9n2zDGneT90XLKyrqFYFg Ansible Anahtari"
+    
+    - name: Bu gorev, sudoer dosya kopyalama islemini yapar.
+      copy:
+          src: /playbooks/Ansible/sudoer_ansuser
+          dest: /etc/sudoers.d/ansuser
+          owner: root
+          group: root
+          mode: 0777

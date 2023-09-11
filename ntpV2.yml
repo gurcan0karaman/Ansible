@@ -1,0 +1,51 @@
+---
+  - hosts: all
+    become: true
+    tasks:
+
+      - name: İşletim sistemlerini tespit et.
+        debug: var=ansible_os_family
+        
+      - name: Dosyalardan Değişkenleri oku.
+        include_vars: "{{ lookup('first_found', params) }}"
+        vars:
+          params:
+            files:
+              - "vars/apache_{{ ansible_os_family }}.yml"
+
+      - name: Timezone yapilandirma Turkey
+        shell: |
+          timedatectl set-timezone Turkey
+      
+      - name: Bu görev app yükleme gerçekleştir.
+        ansible.builtin.package:
+            name:
+              - "{{ ntp }}"
+            state: latest
+        register: conf
+      
+      - name: Bu görev ntp conf dosyasini yedekler.
+        copy:
+          src: /etc/ntp.conf
+          dest: /etc/ntp.conf_yedek
+          remote_src: yes
+          owner: root
+          group: root
+          mode: 0644
+        when: conf.changed
+      
+      - name: Bu görev ntp conf dosyasini kaynaktan remote sunucuya kopyalar.
+        copy:
+          src: /playbooks/Ansible/confbelgeler/ntp.conf
+          dest: /etc/ntp.conf
+          owner: root
+          group: root
+          mode: 0644
+        when: conf.changed
+      
+      - name: Bu gorev ntp servisini restart eder.
+        service:
+          name: "{{ ntpservis }}"
+          state: restarted
+          enabled: yes
+        when: conf.changed
